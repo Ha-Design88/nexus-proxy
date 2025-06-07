@@ -3,25 +3,51 @@ import requests
 
 app = Flask(__name__)
 
-API_KEY = "9e58b2a68c7cd43417ed26e90a8f9cbe" # <-- Trage hier deinen API-Key von api-football ein
+API_KEY = "9e58b2a68c7cd43417ed26e90a8f9cbe"
 
-@app.route('/')
+@app.route("/")
 def home():
     return "Nexus Proxy läuft!"
 
-@app.route('/api/spiele', methods=['GET'])
+@app.route("/api/spiele", methods=["GET"])
 def spiele():
-    url = "https://v3.football.api-sports.io/fixtures"
-    params = {
-        "league": "78",      # z.B. Bundesliga = 78, Premier League = 39, usw.
-        "season": "2023",    # Saison anpassen (z.B. 2023)
-        # "date": "2024-06-07" # Optional: Konkretes Datum (Format: JJJJ-MM-TT)
-    }
+    league = request.args.get("league", "78")      # Standard: Bundesliga (ID 78)
+    season = request.args.get("season", "2023")    # Standard: Saison 2023
+
+    url = f"https://v3.football.api-sports.io/fixtures?league={league}&season={season}"
+
     headers = {
         "x-apisports-key": API_KEY
     }
-    response = requests.get(url, headers=headers, params=params)
-    return jsonify(response.json())
+
+    try:
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()
+        data = response.json()
+
+        # Optional: Nur die wichtigsten Infos ausgeben (z.B. Teams, Ergebnis, Datum)
+        spiele_liste = []
+        for eintrag in data.get("response", []):
+            fixture = eintrag.get("fixture", {})
+            league_data = eintrag.get("league", {})
+            teams = eintrag.get("teams", {})
+            goals = eintrag.get("goals", {})
+
+            spiel = {
+                "datum": fixture.get("date"),
+                "liga": league_data.get("name"),
+                "runde": league_data.get("round"),
+                "heim": teams.get("home", {}).get("name"),
+                "auswärts": teams.get("away", {}).get("name"),
+                "tore_heim": goals.get("home"),
+                "tore_auswärts": goals.get("away")
+            }
+            spiele_liste.append(spiel)
+
+        return jsonify({"spiele": spiele_liste})
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=10000)
+    app.run(host="0.0.0.0", port=10000)
