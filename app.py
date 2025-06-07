@@ -1,3 +1,4 @@
+# Hier stehen dann die anderen API-Routen ...
 from flask import Flask, request, jsonify
 import requests
 
