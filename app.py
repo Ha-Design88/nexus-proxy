@@ -8,7 +8,6 @@ app = Flask(__name__)
 API_KEY = "9e58b2a68c7cd43417ed26e90a8f9cbe"
 
 LIGA_IDS = [
-   LIGA_IDS = [
     59, 62,    # Norwegen
     29, 30,    # Schweden
     142,       # Australien
